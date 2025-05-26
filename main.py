@@ -2,7 +2,6 @@ import argparse
 import os
 import torch
 from torch_geometric.loader import DataLoader
-from src.loadData import GraphDataset
 from src.utils import set_seed
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,7 +9,8 @@ import logging
 from tqdm import tqdm
 from torch.utils.data import random_split
 from src.loss import NoisyCrossEntropyLoss
-from src.models import GNN 
+from src.models import GNN
+from src.file_util import get_or_create_graph_ds
 
 MY_SEED = 739
 
@@ -153,12 +153,12 @@ def main(args):
         print(f"Loaded best model from {checkpoint_path}")
 
     # Prepare test dataset and loader
-    test_dataset = GraphDataset(args.test_path, transform=add_zeros)
+    test_dataset = get_or_create_graph_ds('test.bin', args.test_path, transform=add_zeros)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
     # If train_path is provided, train the model
     if args.train_path:
-        full_dataset = GraphDataset(args.train_path, transform=add_zeros)
+        full_dataset = get_or_create_graph_ds('train.bin', args.train_path, transform=add_zeros)
         val_size = int(0.2 * len(full_dataset))
         train_size = len(full_dataset) - val_size
 
