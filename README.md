@@ -13,12 +13,12 @@ pip3 install --pre torch torchvision torchaudio --index-url https://download.pyt
 
 Run training + inference:
 ```shell
-python main.py --test_path /home/fax/bin/data/A/test.json.gz --train_path /home/fax/bin/data/A/train.json.gz --gnn gcn
+python main.py --test_path /home/fax/bin/data/A/test.json.gz --train_path /home/fax/bin/data/A/train.json.gz --gnn gin-virtual
 ```
 
 Run inference only:
 ```shell
-python main.py --test_path /home/fax/bin/data/A/test.json.gz --gnn gcn
+python main.py --test_path /home/fax/bin/data/A/test.json.gz --gnn gin-virtual
 ```
 
 Produce the submission file:
