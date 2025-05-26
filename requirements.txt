@@ -1,8 +1,7 @@
-torch==2.0.1      
-torch-geometric  
-numpy
-matplotlib
-pandas
-tqdm
-argparse
-
+torch
+torch-geometric==2.6.1
+numpy==2.2.6
+matplotlib==3.10.3
+pandas==2.2.3
+tqdm==4.67.1
+argparse==1.4.0

@@ -15,7 +15,7 @@ from src.models import GNN
 MY_SEED = 739
 
 # Set the random seed
-set_seed(739)
+set_seed(MY_SEED)
 
 def add_zeros(data):
     data.x = torch.zeros(data.num_nodes, dtype=torch.long)
@@ -162,7 +162,7 @@ def main(args):
         val_size = int(0.2 * len(full_dataset))
         train_size = len(full_dataset) - val_size
 
-        generator = torch.Generator().manual_seed(739)
+        generator = torch.Generator().manual_seed(MY_SEED)
         train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size], generator=generator)
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
