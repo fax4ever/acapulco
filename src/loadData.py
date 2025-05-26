@@ -49,12 +49,12 @@ from torch_geometric.loader import DataLoader
 class GraphDataset(Dataset):
     def __init__(self, filename, transform=None, pre_transform=None):
         self.raw = filename
-        self.num_graphs, self.graphs_dicts = self._count_graphs() 
+        self.num_graphs, self.graphs_dicts = self._count_graphs()
         super().__init__(None, transform, pre_transform)
 
     def len(self):
-        return self.num_graphs  
-    
+        return self.num_graphs
+
     def get(self, idx):
         return dictToGraphObject(self.graphs_dicts[idx])
 
@@ -69,9 +69,3 @@ def dictToGraphObject(graph_dict):
     num_nodes = graph_dict["num_nodes"]
     y = torch.tensor(graph_dict["y"][0], dtype=torch.long) if graph_dict["y"] is not None else None
     return Data(edge_index=edge_index, edge_attr=edge_attr, num_nodes=num_nodes, y=y)
-
-
-
-
-
-
