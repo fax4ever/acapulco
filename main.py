@@ -129,7 +129,7 @@ def main(args):
         model = GNN(gnn_type = 'gcn', num_class = 6, num_layer = args.num_layer, emb_dim = args.emb_dim, drop_ratio = args.drop_ratio, virtual_node = True).to(device)
     else:
         raise ValueError('Invalid GNN type')
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
     criterion = NoisyCrossEntropyLoss(args.noise_prob)
 
     # Identify dataset folder (A, B, C, or D)
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_layer', type=int, default=5, help='number of GNN message passing layers (default: 5)')
     parser.add_argument('--emb_dim', type=int, default=300, help='dimensionality of hidden units in GNNs (default: 300)')
     parser.add_argument('--batch_size', type=int, default=32, help='input batch size for training (default: 32)')
-    parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train (default: 10)')
+    parser.add_argument('--epochs', type=int, default=40, help='number of epochs to train (default: 40)')
     parser.add_argument('--noise_prob', type=float, default=0.2, help='Noise probability p in NoisyCrossEntropyLoss')
     args = parser.parse_args()
     main(args)
