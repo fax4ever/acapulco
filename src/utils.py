@@ -31,6 +31,6 @@ def gzip_folder(folder_path, output_file):
     print(f"Folder '{folder_path}' has been compressed into '{output_file}'")
 
 if __name__ == "__main__":
-    folder_path = "/home/fax/code/hackathon/submission"            # Path to the folder you want to compress
-    output_file = "/home/fax/code/hackathon/submission.gz"         # Output .gz file name
+    folder_path = "/home/fax/code/acapulco/submission"            # Path to the folder you want to compress
+    output_file = "/home/fax/code/acapulco/submission.gz"         # Output .gz file name
     gzip_folder(folder_path, output_file)
