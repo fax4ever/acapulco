@@ -317,28 +317,34 @@ def main(args):
         else:
             gin_model.load_state_dict(torch.load(gin_checkpoint_path))
 
-        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-        gcn_outputs, output_labels = submodel_prediction(val_loader, gcn_model, device)
-        gin_outputs, _ = submodel_prediction(val_loader, gin_model, device)
-        prediction_dataset = PredictionDataset(gcn_outputs, gin_outputs, output_labels)
-        meta_training(args, meta_checkpoint_path, meta_checkpoints_folder, meta_criterion, device, logs_folder, meta_model, num_checkpoints,
-                 meta_optimizer, test_dir_name, prediction_dataset)
+        if not args.skip_meta_train:
+            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+            gcn_outputs, output_labels = submodel_prediction(val_loader, gcn_model, device)
+            gin_outputs, _ = submodel_prediction(val_loader, gin_model, device)
+            prediction_dataset = PredictionDataset(gcn_outputs, gin_outputs, output_labels)
+            meta_training(args, meta_checkpoint_path, meta_checkpoints_folder, meta_criterion, device, logs_folder, meta_model, num_checkpoints,
+                     meta_optimizer, test_dir_name, prediction_dataset)
+        else:
+            meta_model.load_state_dict(torch.load(meta_checkpoint_path))
     else:
         gcn_model.load_state_dict(torch.load(gcn_checkpoint_path))
         gin_model.load_state_dict(torch.load(gin_checkpoint_path))
         meta_model.load_state_dict(torch.load(meta_checkpoint_path))
 
-    # Generate predictions for the test set using the best model
-    gcn_outputs, _ = submodel_prediction(test_loader, gcn_model, device)
-    gin_outputs, _ = submodel_prediction(test_loader, gin_model, device)
-    predictions = meta_evaluate(gcn_outputs, gin_outputs, meta_model, device)
-    save_predictions(predictions, args.test_path)
+    if not args.skip_inference:
+        # Generate predictions for the test set using the best model
+        gcn_outputs, _ = submodel_prediction(test_loader, gcn_model, device)
+        gin_outputs, _ = submodel_prediction(test_loader, gin_model, device)
+        predictions = meta_evaluate(gcn_outputs, gin_outputs, meta_model, device)
+        save_predictions(predictions, args.test_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate GNN models on graph datasets.")
     parser.add_argument("--train_path", type=str, help="Path to the training dataset (optional).")
     parser.add_argument('--skip_gcn_train', type=bool, default=False, help='Avoid to train also the GCN sub model')
     parser.add_argument('--skip_gin_train', type=bool, default=False, help='Avoid to train also the GIN sub model')
+    parser.add_argument('--skip_meta_train', type=bool, default=False, help='Avoid to train also the meta model')
+    parser.add_argument('--skip_inference', type=bool, default=False, help='Avoid to inference the predictions')
     parser.add_argument("--test_path", type=str, required=True, help="Path to the test dataset.")
     parser.add_argument("--num_checkpoints", type=int, help="Number of checkpoints to save during training.")
     parser.add_argument('--device', type=int, default=0, help='which gpu to use if any (default: 0)')
