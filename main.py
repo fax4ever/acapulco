@@ -105,7 +105,7 @@ def meta_evaluate(gcn_outputs, gin_outputs, model, device):
     with torch.no_grad():
         for index, gcn_output in enumerate(gcn_outputs):
             gin_output = gin_outputs[index]
-            X = torch.cat([gcn_output, gin_output]).to(device)
+            X = torch.stack([gcn_output, gin_output]).to(device)
             output = model(X)
             pred = output.argmax(dim=0)
             predictions.append(pred.cpu().item())

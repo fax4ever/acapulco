@@ -45,10 +45,14 @@ class TrainingParams:
 class MetaModel(torch.nn.Module):
     def __init__(self, num_of_input_models):
         super(MetaModel, self).__init__()
-        self.layer = torch.nn.Linear(6 * num_of_input_models, 6)
+        initial_value = 1 / num_of_input_models
+        self.alpha = torch.nn.Parameter(torch.Tensor([initial_value]))
+        self.beta = torch.nn.Parameter(torch.Tensor([initial_value]))
 
     def forward(self, x):
-        return self.layer(x)
+        dim = len(x.size()) - 2
+        a, b = torch.unbind(x, dim)
+        return a * self.alpha + b * self.beta
 
 class PredictionDataset(torch.utils.data.Dataset):
     def __init__(self, gcn_predictions, gin_predictions, output_labels):
@@ -58,7 +62,7 @@ class PredictionDataset(torch.utils.data.Dataset):
         self.output_labels = output_labels
 
     def __getitem__(self, index):
-        x = torch.cat([self.gcn_predictions[index], self.gin_predictions[index]])
+        x = torch.stack([self.gcn_predictions[index], self.gin_predictions[index]])
         y = self.output_labels[index]
         return x, y
 
