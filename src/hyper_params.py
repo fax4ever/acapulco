@@ -46,8 +46,8 @@ class MetaModel(torch.nn.Module):
     def __init__(self, num_of_input_models):
         super(MetaModel, self).__init__()
         initial_value = 1 / num_of_input_models
-        self.alpha = torch.nn.Parameter(torch.Tensor([initial_value]))
-        self.beta = torch.nn.Parameter(torch.Tensor([initial_value]))
+        self.alpha = torch.nn.Parameter(torch.Tensor([initial_value for _ in range(0,6)]))
+        self.beta = torch.nn.Parameter(torch.Tensor([initial_value for _ in range(0,6)]))
 
     def forward(self, x):
         dim = len(x.size()) - 2

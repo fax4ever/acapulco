@@ -31,3 +31,25 @@ Produce the submission file:
 python src/utils.py
 ```
 
+# Ideas
+
+Starting from [the GitHub baseline](http://github.com/Graph-Classification-Noisy-Label/hackaton/tree/baselineCe),
+I aligned the code with [the Kaggle baseline](https://www.kaggle.com/code/farooqahmadwani/baseline),
+specifically to incorporate a validation set and to replace the standard cross-entropy loss with `NoisyCrossEntropyLoss`.
+
+I then trained two models—one GCN and one GIN—that achieved solid accuracy,
+and applied an ensemble strategy aimed at outperforming each model individually.
+The goal was to leverage their differing error patterns and learn optimal weights for combining their output logits.
+
+To reduce resource consumption, I designed the solution so that each model could be trained independently.
+This allows us to retrain a single component without needing to retrain the entire ensemble.
+
+While not formally proven, several observations emerged during experimentation:
+
+1. Ensembles can outperform individual base models.
+2. Greater diversity among models generally leads to stronger ensemble performance.
+3. When combining predictions, a linear layer performs significantly worse than summing the Hadamard products of sub-model outputs.
+4. `NoisyCrossEntropyLoss` is far more effective than standard cross-entropy loss in the presence of noisy labels.
+5. Dropout is a critical regularization technique—especially in noisy settings—and should always be applied.
+6. GCN performs best *without* a virtual node and *without* residual connections, using a Jumping Knowledge (JK) strategy with `last` aggregation and `mean` graph pooling.
+7. GIN benefits from both a virtual node and residual connections, using JK with `sum` aggregation and `attention` for graph pooling.
