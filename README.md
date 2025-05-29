@@ -15,6 +15,21 @@ This allows us to retrain a single component without needing to retrain the enti
 
 Enforcing determinism by setting `torch.use_deterministic_algorithms(True)` significantly reduced model performance, making it impractical for this task.
 
+For the final solution:
+
+* I added two additional sub-models.
+* I implemented a co-teaching/co-learning strategy to address noisy labels.
+* I also applied a mixup strategy by adapting code from [https://github.com/ahxt/g-mixup](https://github.com/ahxt/g-mixup).
+  * Specifically, to ensure compatibility with our setup, I had to populate both edge and node features:
+
+```python
+x = torch.zeros(num_nodes, dtype=torch.int)
+edge_attr = torch.normal(0.1, 0.1, size=(edge_index.size(1), 7))
+y = torch.ceil(sample_graph_label).to(dtype=torch.int)
+
+pyg_graph = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+```
+
 While not formally proven, several observations emerged during experimentation:
 
 1. Ensembles can outperform individual base models.

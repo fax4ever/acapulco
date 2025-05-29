@@ -9,7 +9,7 @@ class ModelParams:
         self.residual = residual
         self.jk = jk
         self.graph_pooling = graph_pooling
-        self.drop_ratio = 0.5
+        self.drop_ratio = 0.8
         self.num_layer = 5
         self.emb_dim = 300
 

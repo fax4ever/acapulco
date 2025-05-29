@@ -178,14 +178,14 @@ def main(args):
             gin_model_support.load_best_checkpoint()
         else:
             co_training(gcn_model_support, gin_model_support, train_dataset, val_dataset, args.batch_size, args.epochs,
-                        device, checkpoint_intervals, skip1=args.skip_sub_model_1_train, skip2=args.skip_sub_model_2_train)
+                        device, checkpoint_intervals)
 
         if args.skip_bis_models_train:
             gcn_bis_model_support.load_best_checkpoint()
             gin_bin_model_support.load_best_checkpoint()
         else:
             co_training(gcn_bis_model_support, gin_bin_model_support, train_dataset, val_dataset, args.batch_size, args.epochs,
-                        device, checkpoint_intervals, skip1=args.skip_bis_model_1_train, skip2=args.skip_bis_model_2_train)
+                        device, checkpoint_intervals)
 
         if not args.skip_meta_train:
             val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
@@ -219,11 +219,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate GNN models on graph datasets.")
     parser.add_argument("--train_path", type=str, help="Path to the training dataset (optional).")
     parser.add_argument('--skip_sub_models_train', type=bool, default=False, help='Avoid to train sub models')
-    parser.add_argument('--skip_sub_model_1_train', type=bool, default=False, help='Avoid to train sub model 1')
-    parser.add_argument('--skip_sub_model_2_train', type=bool, default=False, help='Avoid to train sub model 2')
     parser.add_argument('--skip_bis_models_train', type=bool, default=False, help='Avoid to train alternative sub models')
-    parser.add_argument('--skip_bis_model_1_train', type=bool, default=False, help='Avoid to train alternative sub model 1')
-    parser.add_argument('--skip_bis_model_2_train', type=bool, default=False, help='Avoid to train alternative sub model 2')
     parser.add_argument('--skip_meta_train', type=bool, default=False, help='Avoid to train also the meta model')
     parser.add_argument('--skip_inference', type=bool, default=False, help='Avoid to inference the predictions')
     parser.add_argument("--test_path", type=str, required=True, help="Path to the test dataset.")
