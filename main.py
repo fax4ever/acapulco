@@ -45,13 +45,15 @@ def meta_train(model_support: ModelSupport, data_loader, device, save_checkpoint
     return total_loss / len(data_loader), correct / total
 
 
-def meta_evaluate(gcn_outputs, gin_outputs, model, device):
+def meta_evaluate(gcn_outputs, gin_outputs, gcn_bis_outputs, gin_bis_outputs, model, device):
     model.eval()
     predictions = []
     with torch.no_grad():
         for index, gcn_output in enumerate(gcn_outputs):
             gin_output = gin_outputs[index]
-            X = torch.stack([gcn_output, gin_output]).to(device)
+            gcn_bis_output = gcn_bis_outputs[index]
+            gin_bis_output = gin_bis_outputs[index]
+            X = torch.stack([gcn_output, gin_output, gcn_bis_output, gin_bis_output]).to(device)
             output = model(X)
             pred = output.argmax(dim=0)
             predictions.append(pred.cpu().item())
@@ -121,8 +123,18 @@ def main(args):
     gin_model_support = ModelSupport(gin_model, torch.optim.AdamW(gin_model.parameters(), lr=0.005, weight_decay=1e-4),
                                      NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gin', script_dir)
 
+    # GCN alternative model
+    gcn_bis_model = ModelParams('gcn-virtual', False, 'last', 'mean').create_model().to(device)
+    gcn_bis_model_support = ModelSupport(gcn_bis_model, torch.optim.Adam(gcn_bis_model.parameters(), lr=0.001, weight_decay=1e-4),
+                                     NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gcn-bis', script_dir)
+
+    # GIN alternative model
+    gin_bis_model = ModelParams('gin', True, 'sum', 'attention').create_model().to(device)
+    gin_bin_model_support = ModelSupport(gin_bis_model, torch.optim.AdamW(gin_bis_model.parameters(), lr=0.005, weight_decay=1e-4),
+                                     NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gin-bis', script_dir)
+
     # Meta model
-    meta_model = MetaModel(2).to(device)
+    meta_model = MetaModel(4).to(device)
     meta_model_support = ModelSupport(meta_model,
                                       torch.optim.Adam(meta_model.parameters(), lr=0.001, weight_decay=1e-4),
                                       torch.nn.CrossEntropyLoss(), test_dir_name, 'meta', script_dir)
@@ -157,13 +169,22 @@ def main(args):
             gin_model_support.load_best_checkpoint()
         else:
             co_training(gcn_model_support, gin_model_support, train_dataset, val_dataset, args.batch_size, args.epochs,
-                        device, checkpoint_intervals)
+                        device, checkpoint_intervals, skip1=args.skip_sub_model_1_train, skip2=args.skip_sub_model_2_train)
+
+        if args.skip_bis_models_train:
+            gcn_bis_model_support.load_best_checkpoint()
+            gin_bin_model_support.load_best_checkpoint()
+        else:
+            co_training(gcn_bis_model_support, gin_bin_model_support, train_dataset, val_dataset, args.batch_size, args.epochs,
+                        device, checkpoint_intervals, skip1=args.skip_bis_model_1_train, skip2=args.skip_bis_model_2_train)
 
         if not args.skip_meta_train:
             val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
             gcn_outputs, output_labels = submodel_prediction(val_loader, gcn_model, device)
             gin_outputs, _ = submodel_prediction(val_loader, gin_model, device)
-            prediction_dataset = PredictionDataset(gcn_outputs, gin_outputs, output_labels)
+            gcn_bis_outputs, _ = submodel_prediction(val_loader, gcn_bis_model, device)
+            gin_bis_outputs, _ = submodel_prediction(val_loader, gin_bis_model, device)
+            prediction_dataset = PredictionDataset(gcn_outputs, gin_outputs, gcn_bis_outputs, gin_bis_outputs, output_labels)
             meta_training(meta_model_support, prediction_dataset, args.batch_size, args.epochs, device,
                           checkpoint_intervals)
         else:
@@ -171,13 +192,17 @@ def main(args):
     else:
         gcn_model_support.load_best_checkpoint()
         gin_model_support.load_best_checkpoint()
+        gcn_bis_model_support.load_best_checkpoint()
+        gin_bin_model_support.load_best_checkpoint()
         meta_model_support.load_best_checkpoint()
 
     if not args.skip_inference:
         # Generate predictions for the test set using the best model
         gcn_outputs, _ = submodel_prediction(test_loader, gcn_model, device)
         gin_outputs, _ = submodel_prediction(test_loader, gin_model, device)
-        predictions = meta_evaluate(gcn_outputs, gin_outputs, meta_model, device)
+        gcn_bis_outputs, _ = submodel_prediction(test_loader, gcn_bis_model, device)
+        gin_bis_outputs, _ = submodel_prediction(test_loader, gin_bis_model, device)
+        predictions = meta_evaluate(gcn_outputs, gin_outputs, gcn_bis_outputs, gin_bis_outputs, meta_model, device)
         save_predictions(predictions, args.test_path)
 
 
@@ -185,6 +210,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate GNN models on graph datasets.")
     parser.add_argument("--train_path", type=str, help="Path to the training dataset (optional).")
     parser.add_argument('--skip_sub_models_train', type=bool, default=False, help='Avoid to train sub models')
+    parser.add_argument('--skip_sub_model_1_train', type=bool, default=False, help='Avoid to train sub model 1')
+    parser.add_argument('--skip_sub_model_2_train', type=bool, default=False, help='Avoid to train sub model 2')
+    parser.add_argument('--skip_bis_models_train', type=bool, default=False, help='Avoid to train alternative sub models')
+    parser.add_argument('--skip_bis_model_1_train', type=bool, default=False, help='Avoid to train alternative sub model 1')
+    parser.add_argument('--skip_bis_model_2_train', type=bool, default=False, help='Avoid to train alternative sub model 2')
     parser.add_argument('--skip_meta_train', type=bool, default=False, help='Avoid to train also the meta model')
     parser.add_argument('--skip_inference', type=bool, default=False, help='Avoid to inference the predictions')
     parser.add_argument("--test_path", type=str, required=True, help="Path to the test dataset.")
