@@ -2,7 +2,7 @@ import argparse
 import os
 import torch
 from torch_geometric.loader import DataLoader
-
+from src.mix_up_augmentation import mix_up
 from src.hyper_params import ModelParams, MetaModel, PredictionDataset
 from src.utils import set_seed
 import pandas as pd
@@ -163,6 +163,15 @@ def main(args):
         train_size = len(full_dataset) - val_size
         generator = torch.Generator().manual_seed(MY_SEED)
         train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size], generator=generator)
+        """
+        @article{han2022g,
+          title={G-Mixup: Graph Data Augmentation for Graph Classification},
+          author={Han, Xiaotian and Jiang, Zhimeng and Liu, Ninghao and Hu, Xia},
+          journal={arXiv preprint arXiv:2202.07179},
+          year={2022}
+        }
+        """
+        train_dataset = mix_up(train_dataset)
 
         if args.skip_sub_models_train:
             gcn_model_support.load_best_checkpoint()
