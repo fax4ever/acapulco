@@ -46,12 +46,7 @@ python main.py --test_path /home/fax/bin/data/A/test.json.gz --train_path /home/
 
 Run training (only the metamodel) + inference:
 ```shell
-python main.py --test_path /home/fax/bin/data/A/test.json.gz --train_path /home/fax/bin/data/A/train.json.gz --skip_gcn true --skip_gin true
-```
-
-Run training only on GCN submodel:
-```shell
-python main.py --test_path /home/fax/bin/data/A/test.json.gz --train_path /home/fax/bin/data/A/train.json.gz --skip_gin true --skip_meta_train true --skip_inference true
+python main.py --test_path /home/fax/bin/data/A/test.json.gz --train_path /home/fax/bin/data/A/train.json.gz --skip_sub_models_train
 ```
 
 Run inference only:
