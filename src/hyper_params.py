@@ -9,9 +9,9 @@ class ModelParams:
         self.residual = residual
         self.jk = jk
         self.graph_pooling = graph_pooling
-        self.drop_ratio = 0.5
-        self.num_layer = 5
-        self.emb_dim = 300
+        self.drop_ratio = 0.6
+        self.num_layer = 6
+        self.emb_dim = 350
 
     def create_model(self):
         if self.gnn == 'gin':
