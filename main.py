@@ -175,16 +175,16 @@ def main(args):
           year={2022}
         }
         """
-        if test_dir_name is 'A' or test_dir_name is 'D':
-            # Apply mixup only to A and D
+        if test_dir_name is 'A':
+            # Apply mixup only to A
             train_dataset = mix_up(train_dataset)
 
         if args.skip_sub_models_train:
             gcn_model_support.load_best_checkpoint()
             gin_model_support.load_best_checkpoint()
         else:
-            # Apply co_training only to D
-            if test_dir_name is 'D':
+            # Never apply co_training
+            if False:
                 co_training(gcn_model_support, gin_model_support, train_dataset, val_dataset, args.batch_size,
                             args.epochs, device, checkpoint_intervals)
             else:
@@ -195,8 +195,8 @@ def main(args):
             gcn_bis_model_support.load_best_checkpoint()
             gin_bin_model_support.load_best_checkpoint()
         else:
-            # Apply co_training only to D
-            if test_dir_name is 'D':
+            # Never apply co_training
+            if False:
                 co_training(gcn_bis_model_support, gin_bin_model_support, train_dataset, val_dataset, args.batch_size,
                             args.epochs, device, checkpoint_intervals)
             else:
