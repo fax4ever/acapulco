@@ -10,9 +10,11 @@ While trying to find models that fit all types of noise could lead (according to
 What are the differences?
 
 1. `A`: base model + applying a graph mixup data augmentation strategy. This seems to produce decent results for dataset A.
-2. `B`: in this case, I took the base model and increased the dropout, layer size, and embedding size.
+2. `B`: in this case, I took the base model and increased the dropout to 0.6, layer size, and embedding size.
 3. `C`: in this case, I kept the base model, since it already seems to produce good results, for instance in terms of validation set accuracy.
-4. `D`: in this case, I added to the base model both the graph mixup data augmentation strategy and a co-teaching/co-learning implementation (to contrast the noise?).
+4. `D`: in this case, I took the base model and increased the dropout to 0.8, layer size, and embedding size.
+
+
 
 ## Common Ideas
 

@@ -15,6 +15,8 @@ class ModelParams:
 
         if test_dir_name == 'D':
             self.drop_ratio = 0.8
+            self.num_layer = 6
+            self.emb_dim = 350
         elif test_dir_name == 'B':
             self.drop_ratio = 0.6
             self.num_layer = 6
