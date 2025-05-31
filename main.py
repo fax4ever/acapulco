@@ -13,6 +13,7 @@ from src.loss import NoisyCrossEntropyLoss
 from src.file_util import get_or_create_graph_ds
 from src.model_support import ModelSupport
 from src.co_teaching import co_training
+from src.teaching import separate_training
 
 MY_SEED = 739
 
@@ -114,24 +115,26 @@ def main(args):
     test_dir_name = os.path.basename(os.path.dirname(args.test_path))
 
     # GCN model
-    gcn_model = ModelParams('gcn', False, 'last', 'mean').create_model().to(device)
+    gcn_model = ModelParams('gcn', False, 'last', 'mean', test_dir_name).create_model().to(device)
     gcn_model_support = ModelSupport(gcn_model, torch.optim.Adam(gcn_model.parameters(), lr=0.001, weight_decay=1e-4),
                                      NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gcn', script_dir)
 
     # GIN model
-    gin_model = ModelParams('gin-virtual', True, 'sum', 'attention').create_model().to(device)
+    gin_model = ModelParams('gin-virtual', True, 'sum', 'attention', test_dir_name).create_model().to(device)
     gin_model_support = ModelSupport(gin_model, torch.optim.AdamW(gin_model.parameters(), lr=0.005, weight_decay=1e-4),
                                      NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gin', script_dir)
 
     # GCN alternative model
-    gcn_bis_model = ModelParams('gcn-virtual', False, 'last', 'mean').create_model().to(device)
-    gcn_bis_model_support = ModelSupport(gcn_bis_model, torch.optim.Adam(gcn_bis_model.parameters(), lr=0.001, weight_decay=1e-4),
-                                     NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gcn-bis', script_dir)
+    gcn_bis_model = ModelParams('gcn-virtual', False, 'last', 'mean', test_dir_name).create_model().to(device)
+    gcn_bis_model_support = ModelSupport(gcn_bis_model,
+                                         torch.optim.Adam(gcn_bis_model.parameters(), lr=0.001, weight_decay=1e-4),
+                                         NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gcn-bis', script_dir)
 
     # GIN alternative model
-    gin_bis_model = ModelParams('gin', True, 'sum', 'attention').create_model().to(device)
-    gin_bin_model_support = ModelSupport(gin_bis_model, torch.optim.AdamW(gin_bis_model.parameters(), lr=0.005, weight_decay=1e-4),
-                                     NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gin-bis', script_dir)
+    gin_bis_model = ModelParams('gin', True, 'sum', 'attention', test_dir_name).create_model().to(device)
+    gin_bin_model_support = ModelSupport(gin_bis_model,
+                                         torch.optim.AdamW(gin_bis_model.parameters(), lr=0.005, weight_decay=1e-4),
+                                         NoisyCrossEntropyLoss(args.noise_prob), test_dir_name, 'gin-bis', script_dir)
 
     # Meta model
     meta_model = MetaModel(4).to(device)
@@ -163,6 +166,7 @@ def main(args):
         train_size = len(full_dataset) - val_size
         generator = torch.Generator().manual_seed(MY_SEED)
         train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size], generator=generator)
+
         """
         @article{han2022g,
           title={G-Mixup: Graph Data Augmentation for Graph Classification},
@@ -171,21 +175,33 @@ def main(args):
           year={2022}
         }
         """
-        train_dataset = mix_up(train_dataset)
+        if test_dir_name is 'A' or test_dir_name is 'D':
+            # Apply mixup only to A and D
+            train_dataset = mix_up(train_dataset)
 
         if args.skip_sub_models_train:
             gcn_model_support.load_best_checkpoint()
             gin_model_support.load_best_checkpoint()
         else:
-            co_training(gcn_model_support, gin_model_support, train_dataset, val_dataset, args.batch_size, args.epochs,
-                        device, checkpoint_intervals)
+            # Apply co_training only to D
+            if test_dir_name is 'D':
+                co_training(gcn_model_support, gin_model_support, train_dataset, val_dataset, args.batch_size,
+                            args.epochs, device, checkpoint_intervals)
+            else:
+                separate_training(gcn_model_support, gin_model_support, train_dataset, val_dataset, args.batch_size,
+                                  args.epochs, device, checkpoint_intervals)
 
         if args.skip_bis_models_train:
             gcn_bis_model_support.load_best_checkpoint()
             gin_bin_model_support.load_best_checkpoint()
         else:
-            co_training(gcn_bis_model_support, gin_bin_model_support, train_dataset, val_dataset, args.batch_size, args.epochs,
-                        device, checkpoint_intervals)
+            # Apply co_training only to D
+            if test_dir_name is 'D':
+                co_training(gcn_bis_model_support, gin_bin_model_support, train_dataset, val_dataset, args.batch_size,
+                            args.epochs, device, checkpoint_intervals)
+            else:
+                separate_training(gcn_bis_model_support, gin_bin_model_support, train_dataset, val_dataset,
+                                  args.batch_size, args.epochs, device, checkpoint_intervals)
 
         if not args.skip_meta_train:
             val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
@@ -193,7 +209,8 @@ def main(args):
             gin_outputs, _ = submodel_prediction(val_loader, gin_model, device)
             gcn_bis_outputs, _ = submodel_prediction(val_loader, gcn_bis_model, device)
             gin_bis_outputs, _ = submodel_prediction(val_loader, gin_bis_model, device)
-            prediction_dataset = PredictionDataset(gcn_outputs, gin_outputs, gcn_bis_outputs, gin_bis_outputs, output_labels)
+            prediction_dataset = PredictionDataset(gcn_outputs, gin_outputs, gcn_bis_outputs, gin_bis_outputs,
+                                                   output_labels)
             meta_training(meta_model_support, prediction_dataset, args.batch_size, args.epochs, device,
                           checkpoint_intervals)
         else:
@@ -219,7 +236,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate GNN models on graph datasets.")
     parser.add_argument("--train_path", type=str, help="Path to the training dataset (optional).")
     parser.add_argument('--skip_sub_models_train', type=bool, default=False, help='Avoid to train sub models')
-    parser.add_argument('--skip_bis_models_train', type=bool, default=False, help='Avoid to train alternative sub models')
+    parser.add_argument('--skip_bis_models_train', type=bool, default=False,
+                        help='Avoid to train alternative sub models')
     parser.add_argument('--skip_meta_train', type=bool, default=False, help='Avoid to train also the meta model')
     parser.add_argument('--skip_inference', type=bool, default=False, help='Avoid to inference the predictions')
     parser.add_argument("--test_path", type=str, required=True, help="Path to the test dataset.")

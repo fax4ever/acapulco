@@ -1,6 +1,20 @@
 # Graph Classification Noisy Labels
 
-## Ideas
+## Different noises / different strategies
+
+I found this idea probably too late. I should have remembered this concept from the course.
+Basically, it seems that the best performances can be achieved only if we differentiate the strategies/models to use for each
+data source (A, B, C, D).
+While trying to find models that fit all types of noise could lead (according to my trials) to suboptimal results.
+
+What are the differences?
+
+1. `A`: base model + applying a graph mixup data augmentation strategy. This seems to produce decent results for dataset A.
+2. `B`: in this case, I took the base model and increased the dropout, layer size, and embedding size.
+3. `C`: in this case, I kept the base model, since it already seems to produce good results, for instance in terms of validation set accuracy.
+4. `D`: in this case, I added to the base model both the graph mixup data augmentation strategy and a co-teaching/co-learning implementation (to contrast the noise?).
+
+## Common Ideas
 
 Starting from [the GitHub baseline](http://github.com/Graph-Classification-Noisy-Label/hackaton/tree/baselineCe),
 I aligned the code with [the Kaggle baseline](https://www.kaggle.com/code/farooqahmadwani/baseline),

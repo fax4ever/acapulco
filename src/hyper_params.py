@@ -3,15 +3,22 @@ import torch
 from src.models import GNN
 
 class ModelParams:
-    def __init__(self, gnn, residual, jk, graph_pooling):
+    def __init__(self, gnn, residual, jk, graph_pooling, test_dir_name):
         super().__init__()
         self.gnn = gnn
         self.residual = residual
         self.jk = jk
         self.graph_pooling = graph_pooling
-        self.drop_ratio = 0.8
+        self.drop_ratio = 0.5
         self.num_layer = 5
         self.emb_dim = 300
+
+        if test_dir_name == 'D':
+            self.drop_ratio = 0.8
+        elif test_dir_name == 'B':
+            self.drop_ratio = 0.6
+            self.num_layer = 6
+            self.emb_dim = 350
 
     def create_model(self):
         if self.gnn == 'gin':
